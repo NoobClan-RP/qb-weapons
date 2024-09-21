@@ -66,56 +66,6 @@ RegisterNetEvent('qb-weapons:client:SetWeaponQuality', function(amount)
     end
 end)
 
-RegisterNetEvent('qb-weapons:client:AddAmmo', function(ammoType, amount, itemData)
-    local ped = PlayerPedId()
-    local weapon = GetSelectedPedWeapon(ped)
-
-    if not CurrentWeaponData then
-        QBCore.Functions.Notify(Lang:t('error.no_weapon'), 'error')
-        return
-    end
-
-    if QBCore.Shared.Weapons[weapon]['name'] == 'weapon_unarmed' then
-        QBCore.Functions.Notify(Lang:t('error.no_weapon_in_hand'), 'error')
-        return
-    end
-
-    if QBCore.Shared.Weapons[weapon]['ammotype'] ~= ammoType:upper() then
-        QBCore.Functions.Notify(Lang:t('error.wrong_ammo'), 'error')
-        return
-    end
-
-    local total = GetAmmoInPedWeapon(ped, weapon)
-    local _, maxAmmo = GetMaxAmmo(ped, weapon)
-
-    if total >= maxAmmo then
-        QBCore.Functions.Notify(Lang:t('error.max_ammo'), 'error')
-        return
-    end
-
-    QBCore.Functions.Progressbar('taking_bullets', Lang:t('info.loading_bullets'), Config.ReloadTime, false, true, {
-        disableMovement = false,
-        disableCarMovement = false,
-        disableMouse = false,
-        disableCombat = true,
-    }, {}, {}, {}, function() -- Done
-        weapon = GetSelectedPedWeapon(ped) -- Get weapon at time of completion
-
-        if QBCore.Shared.Weapons[weapon]?.ammotype ~= ammoType then
-            return QBCore.Functions.Notify(Lang:t('error.wrong_ammo'), 'error')
-        end
-
-        AddAmmoToPed(ped, weapon, amount)
-        TaskReloadWeapon(ped, false)
-        TriggerServerEvent('qb-weapons:server:UpdateWeaponAmmo', CurrentWeaponData, total + amount)
-        TriggerServerEvent('qb-weapons:server:removeWeaponAmmoItem', itemData)
-        TriggerEvent('qb-inventory:client:ItemBox', QBCore.Shared.Items[itemData.name], 'remove')
-        TriggerEvent('QBCore:Notify', Lang:t('success.reloaded'), 'success')
-    end, function()
-        QBCore.Functions.Notify(Lang:t('error.canceled'), 'error')
-    end)
-end)
-
 RegisterNetEvent('qb-weapons:client:UseWeapon', function(weaponData, shootbool)
     local ped = PlayerPedId()
     local weaponName = tostring(weaponData.name)
